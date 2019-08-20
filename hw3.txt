@@ -1,0 +1,81 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+void printPrompt() {
+        printf("$ ");
+}
+
+
+int main(int argc, char **argv) {
+        char cmd[1024];
+        char *ptr; char *ptr2; int i = 1;
+        int j = 0;
+        char *cmdlist[10];
+        char *cmdtmp;
+
+ /* "I/O redirection, pipe 구현X..... .*/
+
+        memset(cmd, 0, 1024);
+        memset(cmdlist, 0, 10);
+
+        if (argc != 1) { // argc로 들어온 문자열로 exec해야 하는 경우
+                strcpy(cmd, argv[2]); // " " 안에 들어있는 문자열만 cmd에 복사
+                cmdtmp = ptr2 = strtok(cmd, ";");
+                while (ptr2 != NULL) {
+                        cmdlist[0] = ptr = strtok(cmdtmp, " ");
+                        while (ptr != NULL) {
+                                cmdlist[i] = ptr = strtok(NULL, " ");
+                                i++;
+                        }
+
+                        int child_pid = fork(); // 위에서 받은 cmd를 가지고 명령어를 수행한다.
+                        if (child_pid == 0) {
+                                execvp(cmdlist[0], cmdlist);
+                                exit(1);
+                        }
+                        else {
+                                wait(NULL);
+                        }
+                        memset(cmdlist, 0, 10);
+                        i = 1;
+                        ptr2 = strtok(NULL, ";");
+                        printf("\n");
+                }
+
+printf("; 이후 명령어를 실행하지 못하는 문제를 해결하지 못했습니다ㅠ\n");
+        }
+
+        else { // printPrompt 이후에 명령어를 한번씩 입력하는 경우 (ctrl+c 입력될 때까지)
+                while (1) {
+                        printPrompt();
+
+                        fgets(cmd, 1023, stdin);
+                        /*  입력이 예를 들어  ls -Rl 이 들어오면,
+                         *  cmd에는 "ls -Rl\n"이 저장된다.
+                         *  그래서 뒤에 \n을 없애기 위해 아래와 같은 코드를 추가하였다. */
+                        char *n = strchr(cmd, '\n');
+                        if (n) { *n = 0; }
+
+                        cmdlist[0] = ptr = strtok(cmd, " ");
+                        while (ptr != NULL) {
+                                cmdlist[i] = ptr = strtok(NULL, " ");
+                                i++;
+                        }
+
+                        int child_pid = fork(); // 위에서 받은 cmd를 가지고 명령어를 수행한다.
+                        if (child_pid == 0) {
+                                execvp(cmdlist[0], cmdlist);
+                                exit(1);
+                        }
+                        else {
+                                wait(NULL);
+                        }
+                }
+        }
+
+        return 0;
+}
